@@ -5,8 +5,8 @@ import * as path from 'path';
 
 @Injectable()
 export class AppService {
-  async getHello(filePath: string) {
-    console.log(filePath)
+  async getHello(filePath: string): Promise<string> {
+    
     try {
       const rl = readline.createInterface({
         input: createReadStream(filePath),
@@ -36,13 +36,14 @@ export class AppService {
       if (!existsSync(outputDir)) {
         mkdirSync(outputDir);
       }
-      const outputFilePath = path.join(outputDir, 'output.txt');
+      let date = new Date();
+      const outputFilePath = path.join(outputDir, `processed_file_${date.getFullYear()}_${date.getMonth()}_${date.getDate()}_${date.getHours()}${date.getMinutes()}${date.getSeconds()}.txt`);
       writeFileSync(outputFilePath, lines.join('\n'));
 
-      return lines;
+      return outputFilePath ;
     } catch (error) {
       console.log(error);
-      
+      throw new Error('Error processing file');
     }
     
 
