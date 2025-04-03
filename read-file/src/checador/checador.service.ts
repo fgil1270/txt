@@ -10,9 +10,9 @@ export class ChecadorService {
       if (!pool) {
         throw new Error('Database connection failed');
       }
-      const result = await pool.request().query(`SELECT TOP 8 * FROM Table_1 
-        WHERE devserialno = 'K98247674' 
-        ORDER BY accessdatentime DESC`);
+      const result = await pool.request().query(`SELECT TOP 4 * FROM Table_1 
+        WHERE devserialno = 'K98247676' 
+        ORDER BY accessdatentime DESC`);//K98247676  K98247674
       
       
       if (result.recordset.length > 0 && result.recordset[0].capturedpicture) {

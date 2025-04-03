@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "@nestjs/config": "^3.2.3"
-  },
-  "devDependencies": {
-    "@types/node": "^22.7.0"
-  }
-}
