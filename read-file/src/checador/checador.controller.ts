@@ -18,7 +18,7 @@ export class ChecadorController {
         
         /* const hexString = data.toString('hex');
         const buffer = Buffer.from(hexString, 'hex'); */
-        const base64Image = data.toString('base64');
+        //const base64Image = data.toString('base64');
         
         return res.json(data)
       }else{
