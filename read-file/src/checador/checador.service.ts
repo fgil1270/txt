@@ -7,12 +7,13 @@ export class ChecadorService {
   async findAll(): Promise<{ registros: any[]; totalTurnoUno: number, totalTurnoDos: number, totalTurnoTres: number } | null> {
     try {
       const pool = await poolPromise;
+      const serialChecador = 'K98247675'; // numero de checador
       if (!pool) {
         throw new Error('Database connection failed');
       }
-      const queryRegistros = await pool.request().query(`SELECT TOP 4 *
+      const queryRegistros = await pool.request().query(`SELECT TOP 8 *
         FROM Table_1 
-        WHERE devserialno = 'K98247676' 
+        WHERE devserialno = '${serialChecador}' 
         ORDER BY accessdatentime DESC`); ///K98247676  K98247674
 
       const currentTime = new Date();
@@ -21,17 +22,18 @@ export class ChecadorService {
       let queryTotal = '';
 
       //turno 1
-      if (currentHour >= 9 && currentHour <= 15 ) {
+      if (currentHour >= 9 && currentHour <= 15) {
         queryTotal = `
           WITH RankedRecords AS (
             SELECT *,
                   ROW_NUMBER() OVER (PARTITION BY EmployeeID ORDER BY accessdatentime DESC) AS RowNum,
                   'Turno 1' AS turno
             FROM Table_1
-            WHERE 
+            WHERE (
               CAST(accessdatentime AS TIME) BETWEEN '09:30:00' AND '15:00:00'
-              AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE)
-              AND devserialno = 'K98247676'
+              AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE)  
+            )
+            AND devserialno = '${serialChecador}'
           )
           SELECT *
           FROM RankedRecords
@@ -41,7 +43,7 @@ export class ChecadorService {
       }
 
       //turno 2
-      if (currentHour >= 17 && currentHour <= 20 ) {
+      if (currentHour >= 17 && currentHour <= 20) {
         queryTotal = `
         WITH RankedRecords AS (
           SELECT *,
@@ -52,11 +54,12 @@ export class ChecadorService {
                 ELSE 'Sin Turno'
           END AS turno
           FROM Table_1
-          WHERE 
+          WHERE (
             (CAST(accessdatentime AS TIME) BETWEEN '09:30:00' AND '15:00:00'
             OR (CAST(accessdatentime AS TIME) BETWEEN '17:30:00' AND '20:00:00'))
             AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE)
-            AND devserialno = 'K98247676'
+          )
+          AND devserialno = '${serialChecador}'
         )
         SELECT *
         FROM RankedRecords
@@ -66,43 +69,45 @@ export class ChecadorService {
       }
 
       //turno 3
-      if (currentHour >= 0 && currentHour <= 2 ) {
+      if (currentHour >= 0 && currentHour <= 2) {
         queryTotal = `
         WITH RankedRecords AS (
-        SELECT *,
-              ROW_NUMBER() OVER (PARTITION BY EmployeeID ORDER BY accessdatentime DESC) AS RowNum,
-              CASE
-                WHEN CAST(accessdatentime AS TIME) BETWEEN '09:30:00' AND '15:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE) THEN 'Turno 1'
-                WHEN CAST(accessdatentime AS TIME) BETWEEN '17:30:00' AND '20:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE) THEN 'Turno 2'
-                WHEN CAST(accessdatentime AS TIME) BETWEEN '00:30:00' AND '02:00:00' AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE) THEN 'Turno 3'
-                ELSE 'Sin Turno'
-              END AS turno
-        FROM Table_1
-        WHERE 
-          (CAST(accessdatentime AS TIME) BETWEEN '09:30:00' AND '15:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)) -- Turno 1
-          OR (CAST(accessdatentime AS TIME) BETWEEN '17:30:00' AND '20:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)) -- Turno 2
-          OR (CAST(accessdatentime AS TIME) BETWEEN '00:30:00' AND '02:00:00' AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE)) -- Turno 3
-          AND devserialno = 'K98247676'
-      )
-      SELECT *
-      FROM RankedRecords
-      
-      ORDER BY accessdatentime DESC;
+          SELECT *,
+                ROW_NUMBER() OVER (PARTITION BY EmployeeID ORDER BY accessdatentime DESC) AS RowNum,
+                CASE
+                  WHEN CAST(accessdatentime AS TIME) BETWEEN '09:30:00' AND '15:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE) THEN 'Turno 1'
+                  WHEN CAST(accessdatentime AS TIME) BETWEEN '17:30:00' AND '20:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE) THEN 'Turno 2'
+                  WHEN CAST(accessdatentime AS TIME) BETWEEN '00:30:00' AND '02:00:00' AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE) THEN 'Turno 3'
+                  ELSE 'Sin Turno'
+                END AS turno
+          FROM Table_1
+          WHERE (
+            (CAST(accessdatentime AS TIME) BETWEEN '09:30:00' AND '15:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)) -- Turno 1
+            OR (CAST(accessdatentime AS TIME) BETWEEN '17:30:00' AND '20:00:00' AND CAST(accessdatentime AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)) -- Turno 2
+            OR (CAST(accessdatentime AS TIME) BETWEEN '00:30:00' AND '02:00:00' AND CAST(accessdatentime AS DATE) = CAST(GETDATE() AS DATE)) -- Turno 3
+          )
+          AND devserialno = '${serialChecador}'
+        )
+        SELECT *
+        FROM RankedRecords
+        
+        ORDER BY accessdatentime DESC;
         `;
       }
-      
-      
-      
+
+
+
       const consultaTotal = await pool.request().query(queryTotal);
-      
+
       let totalTurnoUno = 0;
       let totalTurnoDos = 0;
       let totalTurnoTres = 0;
+
       if (queryRegistros.recordset.length > 0 && queryRegistros.recordset[0].capturedpicture) {
-        
+
         const registros = queryRegistros.recordset;
         const total = consultaTotal.recordset;
-        
+
         total?.forEach(element => {
           switch (element.turno) {
             case 'Turno 1':
@@ -114,18 +119,19 @@ export class ChecadorService {
             case 'Turno 3':
               ++totalTurnoUno;
               break;
-          
+
             default:
               break;
           }
         });
-        return {registros: registros,
+        return {
+          registros: registros,
           totalTurnoUno: totalTurnoUno,
-          totalTurnoDos:totalTurnoDos,
+          totalTurnoDos: totalTurnoDos,
           totalTurnoTres: totalTurnoTres
         };
       }
-  
+
       return null;
     } catch (err) {
       console.error('SQL error', err);
